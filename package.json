@@ -1,0 +1,77 @@
+{
+  "name": "react-split-flap-display",
+  "version": "0.1.0",
+  "description": "A composable React split-flap display component with realistic 3D flip animation, character cascading, multiple visual styles, and zero dependencies.",
+  "author": "Zach Varney <zach@rangerventures.com> (https://zvarney.com)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Varnasus/split-flap-display"
+  },
+  "homepage": "https://github.com/Varnasus/split-flap-display#readme",
+  "bugs": {
+    "url": "https://github.com/Varnasus/split-flap-display/issues"
+  },
+  "keywords": [
+    "react",
+    "split-flap",
+    "flip",
+    "display",
+    "departure-board",
+    "animation",
+    "component",
+    "solari",
+    "train-station",
+    "retro"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.0",
+    "react-dom": ">=17.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "jsdom": "^29.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^4.1.2"
+  }
+}

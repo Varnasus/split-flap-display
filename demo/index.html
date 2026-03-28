@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Split-Flap Display — Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  ::selection{background:rgba(74,222,128,0.25);color:#fff}
+  body{background:#08080a;color:#e8e6e1;font-family:'DM Sans',sans-serif;min-height:100vh}
+
+  /* ══════ FLAP KEYFRAMES ══════ */
+  @keyframes foldDown {
+    0%   { transform: rotateX(0deg); }
+    100% { transform: rotateX(-90deg); }
+  }
+  @keyframes foldUp {
+    0%   { transform: rotateX(90deg); }
+    100% { transform: rotateX(0deg); }
+  }
+  @keyframes settle {
+    0%   { transform: rotateX(-4deg); }
+    40%  { transform: rotateX(1.5deg); }
+    70%  { transform: rotateX(-0.5deg); }
+    100% { transform: rotateX(0deg); }
+  }
+
+  /* ══════ FLAP STRUCTURE ══════ */
+  .flap-char {
+    display: inline-block;
+    position: relative;
+    perspective: 300px;
+  }
+  .flap-char .half {
+    position: absolute;
+    left: 0; right: 0;
+    overflow: hidden;
+  }
+  .flap-char .half-top {
+    top: 0;
+    border-radius: var(--r) var(--r) 0 0;
+  }
+  .flap-char .half-bot {
+    bottom: 0;
+    border-radius: 0 0 var(--r) var(--r);
+  }
+  .flap-char .half span {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    user-select: none;
+    line-height: var(--fh);
+    font-size: var(--fs);
+  }
+  .flap-char .half-bot span {
+    position: relative;
+    top: calc(var(--fh) / -2);
+  }
+
+  /* Static layers */
+  .flap-char .back { z-index: 1; }
+  
+  /* Animated flaps */
+  .flap-char .flip-top {
+    z-index: 4;
+    transform-origin: bottom center;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    animation: foldDown var(--dur) ease-in forwards;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  .flap-char .flip-bot {
+    z-index: 4;
+    transform-origin: top center;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    transform: rotateX(90deg);
+    animation: foldUp var(--dur) ease-out forwards;
+    animation-delay: calc(var(--dur) * 0.45);
+    box-shadow: 0 -3px 10px rgba(0,0,0,0.4);
+  }
+  
+  /* Settle bounce on bottom after flip */
+  .flap-char .settled {
+    z-index: 3;
+    transform-origin: top center;
+    animation: settle 150ms ease-out forwards;
+  }
+
+  /* Divider */
+  .flap-char .divider {
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    height: var(--dh);
+    margin-top: calc(var(--dh) / -2);
+    z-index: 10;
+  }
+  /* Border overlay */
+  .flap-char .border-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--r);
+    z-index: 11;
+    pointer-events: none;
+  }
+  /* Scan-line texture */
+  .flap-char .texture {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0,0,0,0.06) 1px, rgba(0,0,0,0.06) 2px);
+    pointer-events: none;
+  }
+
+  /* ══════ HOUSING ══════ */
+  .housing {
+    background: #0a0a0c;
+    border: 2px solid #1a1a1d;
+    border-radius: 8px;
+    padding: 28px 20px;
+    position: relative;
+    box-shadow: inset 0 2px 12px rgba(0,0,0,0.6), 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .housing .label {
+    position: absolute; top: -10px; left: 20px;
+    background: #0a0a0c; padding: 2px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: #555; letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  .housing .bolt {
+    position: absolute; width: 6px; height: 6px;
+    border-radius: 50%; background: #1e1e22;
+    border: 1px solid #2a2a2e;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+  }
+
+  /* ══════ DEMO LAYOUT ══════ */
+  .container { max-width: 920px; margin: 0 auto; padding: 20px 28px 72px; }
+  .section { margin-bottom: 48px; }
+  .tag {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+    color: #4ade80; letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
+  }
+  .tag::before { content: ''; width: 18px; height: 1px; background: #4ade80; }
+  .desc { font-size: 14px; color: #8a8a8f; line-height: 1.55; max-width: 540px; margin-bottom: 20px; }
+  .surface { background: #0f0f12; border: 1px solid #161619; border-radius: 10px; padding: 40px 20px; text-align: center; overflow-x: auto; }
+  .btn {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    background: rgba(74,222,128,0.1); color: #4ade80;
+    border: 1px solid rgba(74,222,128,0.2); border-radius: 5px;
+    padding: 7px 14px; cursor: pointer; margin-bottom: 16px;
+  }
+  .btn:hover { background: rgba(74,222,128,0.15); }
+  .pill {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    background: transparent; color: #4e4e53;
+    border: 1px solid #1e1e22; border-radius: 5px;
+    padding: 5px 11px; cursor: pointer;
+  }
+  .pill.active { background: rgba(74,222,128,0.1); color: #4ade80; border-color: rgba(74,222,128,0.2); }
+  input.playground-input {
+    font-family: 'JetBrains Mono', monospace; font-size: 14px;
+    background: #0f0f12; color: #e8e6e1;
+    border: 1px solid #1e1e22; border-radius: 6px;
+    padding: 10px 14px; outline: none; width: 260px;
+  }
+  .code-block {
+    background: #0f0f12; border: 1px solid #161619; border-radius: 7px;
+    padding: 14px 18px; margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: #8a8a8f; line-height: 1.8;
+  }
+  header { max-width: 920px; margin: 0 auto; padding: 44px 28px 12px; }
+  footer { border-top: 1px solid #161619; padding: 20px 28px; text-align: center; font-family: 'JetBrains Mono',monospace; font-size: 10px; color: #4e4e53; }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4ade80;letter-spacing:0.1em;margin-bottom:8px">REACT-SPLIT-FLAP-DISPLAY</div>
+  <h1 style="font-size:30px;font-weight:600;letter-spacing:-0.03em;margin-bottom:6px">Split-Flap Display</h1>
+  <p style="font-size:15px;color:#8a8a8f;line-height:1.55;max-width:540px;margin-bottom:8px">
+    Real 3D flip animation testing. Open this file directly in Chrome to see the true perspective transforms.
+  </p>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4e4e53;display:flex;gap:12px;flex-wrap:wrap">
+    <span>by Zach Varney</span><span>·</span>
+    <span style="color:#4ade80">MIT</span><span>·</span>
+    <span>Ranger Ventures LLC</span>
+  </div>
+</header>
+
+<div class="container">
+  <div style="height:1px;background:#1e1e22;margin:16px 0 36px"></div>
+
+  <!-- DEMO 1: Hero Cycle -->
+  <div class="section">
+    <div class="tag">1 · Hero — Ranger Theme</div>
+    <p class="desc">Auto-cycles every 4s. Characters cascade through the alphabet to reach each target.</p>
+    <div class="surface" id="demo-hero"></div>
+  </div>
+
+  <!-- DEMO 2: Departure Board -->
+  <div class="section">
+    <div class="tag">2 · Departure Board — Classic</div>
+    <p class="desc">Train station housing with scan-line texture, bolts, and multi-color rows.</p>
+    <div id="demo-board"></div>
+  </div>
+
+  <!-- DEMO 3: Patriot -->
+  <div class="section">
+    <div class="tag">3 · Patriot Theme</div>
+    <p class="desc">Navy flaps, white text, red accent. USA-inspired without being literal.</p>
+    <div id="demo-patriot" style="background:#0c0e18;border:1px solid #1a1e30;border-radius:10px;padding:40px 20px;text-align:center;position:relative;overflow-x:auto">
+      <div style="position:absolute;top:0;left:10%;right:10%;height:3px;background:linear-gradient(90deg,transparent,#ef4444,transparent);border-radius:0 0 2px 2px"></div>
+      <div id="patriot-line1" style="margin-bottom:14px"></div>
+      <div id="patriot-line2"></div>
+    </div>
+  </div>
+
+  <!-- DEMO 4: Stats -->
+  <div class="section">
+    <div class="tag">4 · Stats Counter</div>
+    <p class="desc">Numbers flip on trigger.</p>
+    <button class="btn" id="stats-btn" onclick="triggerStats()">▶ Trigger</button>
+    <div id="demo-stats"></div>
+  </div>
+
+  <!-- DEMO 5: Clock -->
+  <div class="section">
+    <div class="tag">5 · Live Clock</div>
+    <p class="desc">Updates every second.</p>
+    <div id="demo-clock"></div>
+  </div>
+
+  <!-- DEMO 6: Board Mode -->
+  <div class="section">
+    <div class="tag">6 · Board Mode</div>
+    <p class="desc">All flaps spin simultaneously with extra cycles, then settle one by one — the classic Solari departure board feel.</p>
+    <button class="btn" id="board-btn" onclick="triggerBoard()">▶ Update Board</button>
+    <div id="demo-board-mode"></div>
+  </div>
+
+  <!-- DEMO 7: Spinning / Loading -->
+  <div class="section">
+    <div class="tag">7 · Spinning / Loading</div>
+    <p class="desc">Continuous cycling with no target — perfect for loading states. Click to stop and settle on a value.</p>
+    <button class="btn" id="spin-btn" onclick="toggleSpin()">■ Stop</button>
+    <div class="surface" id="demo-spinning"></div>
+  </div>
+
+  <!-- DEMO 8: Playground -->
+  <div class="section">
+    <div class="tag">8 · Playground</div>
+    <p class="desc">Type anything. Toggle size, style, color.</p>
+    <div style="margin-bottom:16px">
+      <input class="playground-input" id="pg-input" value="HELLO WORLD" oninput="updatePlayground()" maxlength="24"><br><br>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;color:#4e4e53;margin-right:2px">Size</span>
+        <button class="pill active" data-group="size" data-val="sm" onclick="pgSet('size','sm',this)">sm</button>
+        <button class="pill" data-group="size" data-val="md" onclick="pgSet('size','md',this)">md</button>
+        <button class="pill" data-group="size" data-val="lg" onclick="pgSet('size','lg',this)">lg</button>
+        <button class="pill" data-group="size" data-val="xl" onclick="pgSet('size','xl',this)">xl</button>
+        <span style="font-size:11px;color:#4e4e53;margin-left:8px;margin-right:2px">Style</span>
+        <button class="pill active" data-group="variant" data-val="modern" onclick="pgSet('variant','modern',this)">modern</button>
+        <button class="pill" data-group="variant" data-val="classic" onclick="pgSet('variant','classic',this)">classic</button>
+        <span style="font-size:11px;color:#4e4e53;margin-left:8px;margin-right:2px">Mode</span>
+        <button class="pill active" data-group="mode" data-val="cascade" onclick="pgSet('mode','cascade',this)">cascade</button>
+        <button class="pill" data-group="mode" data-val="board" onclick="pgSet('mode','board',this)">board</button>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:11px;color:#4e4e53;margin-right:2px">Color</span>
+        <button class="pill" data-group="color" data-val="dark" onclick="pgSet('color','dark',this)">dark</button>
+        <button class="pill" data-group="color" data-val="light" onclick="pgSet('color','light',this)">light</button>
+        <button class="pill active" data-group="color" data-val="ranger" onclick="pgSet('color','ranger',this)">ranger</button>
+        <button class="pill" data-group="color" data-val="patriot" onclick="pgSet('color','patriot',this)">patriot</button>
+        <button class="pill" data-group="color" data-val="red" onclick="pgSet('color','red',this)">red</button>
+        <span style="font-size:11px;color:#4e4e53;margin-left:8px;margin-right:2px">Sound</span>
+        <button class="pill" id="sound-toggle" onclick="toggleSound(this)">off</button>
+        <button class="pill active" data-group="sndvar" data-val="clack" onclick="pgSetSound('clack',this)">clack</button>
+        <button class="pill" data-group="sndvar" data-val="click" onclick="pgSetSound('click',this)">click</button>
+        <button class="pill" data-group="sndvar" data-val="soft" onclick="pgSetSound('soft',this)">soft</button>
+      </div>
+    </div>
+    <div id="demo-playground"></div>
+    <div class="code-block" id="pg-code"></div>
+  </div>
+</div>
+
+<footer>© 2026 Zach Varney · Ranger Ventures LLC · github.com/Varnasus</footer>
+
+<script>
+// ════════════════════════════════════════════
+// SOUND ENGINE (Web Audio API — runtime synthesis)
+// ════════════════════════════════════════════
+let _audioCtx = null;
+let _soundEnabled = false;
+let _soundVariant = "clack"; // "clack" | "click" | "soft"
+
+function getAudioCtx() {
+  if (!_audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    try { _audioCtx = new Ctx(); } catch { return null; }
+  }
+  if (_audioCtx.state === "suspended") _audioCtx.resume().catch(()=>{});
+  return _audioCtx;
+}
+
+function makeNoise(ctx, duration) {
+  const len = Math.floor(ctx.sampleRate * duration);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+function synthClack(ctx, vol, t) {
+  // Noise burst (snap)
+  const nb = ctx.createBufferSource(); nb.buffer = makeNoise(ctx, 0.04);
+  const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 3500; bp.Q.value = 1.2;
+  const ng = ctx.createGain(); ng.gain.setValueAtTime(vol*0.7, t); ng.gain.exponentialRampToValueAtTime(0.001, t+0.035);
+  nb.connect(bp).connect(ng).connect(ctx.destination); nb.start(t); nb.stop(t+0.04);
+  // Low thump
+  const th = ctx.createOscillator(); th.type = "sine"; th.frequency.setValueAtTime(180, t); th.frequency.exponentialRampToValueAtTime(60, t+0.04);
+  const tg = ctx.createGain(); tg.gain.setValueAtTime(vol*0.5, t); tg.gain.exponentialRampToValueAtTime(0.001, t+0.05);
+  th.connect(tg).connect(ctx.destination); th.start(t); th.stop(t+0.05);
+  // Latch click
+  const la = ctx.createOscillator(); la.type = "square"; la.frequency.value = 2800;
+  const lg = ctx.createGain(); lg.gain.setValueAtTime(vol*0.15, t); lg.gain.exponentialRampToValueAtTime(0.001, t+0.008);
+  la.connect(lg).connect(ctx.destination); la.start(t); la.stop(t+0.01);
+}
+
+function synthClick(ctx, vol, t) {
+  const nb = ctx.createBufferSource(); nb.buffer = makeNoise(ctx, 0.025);
+  const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 4000;
+  const ng = ctx.createGain(); ng.gain.setValueAtTime(vol*0.45, t); ng.gain.exponentialRampToValueAtTime(0.001, t+0.02);
+  nb.connect(hp).connect(ng).connect(ctx.destination); nb.start(t); nb.stop(t+0.025);
+  const tk = ctx.createOscillator(); tk.type = "sine"; tk.frequency.value = 4200;
+  const tg = ctx.createGain(); tg.gain.setValueAtTime(vol*0.2, t); tg.gain.exponentialRampToValueAtTime(0.001, t+0.006);
+  tk.connect(tg).connect(ctx.destination); tk.start(t); tk.stop(t+0.008);
+}
+
+function synthSoft(ctx, vol, t) {
+  const nb = ctx.createBufferSource(); nb.buffer = makeNoise(ctx, 0.05);
+  const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 800; lp.Q.value = 0.5;
+  const ng = ctx.createGain(); ng.gain.setValueAtTime(vol*0.35, t); ng.gain.exponentialRampToValueAtTime(0.001, t+0.045);
+  nb.connect(lp).connect(ng).connect(ctx.destination); nb.start(t); nb.stop(t+0.05);
+  const sub = ctx.createOscillator(); sub.type = "sine"; sub.frequency.setValueAtTime(100, t); sub.frequency.exponentialRampToValueAtTime(40, t+0.05);
+  const sg = ctx.createGain(); sg.gain.setValueAtTime(vol*0.3, t); sg.gain.exponentialRampToValueAtTime(0.001, t+0.06);
+  sub.connect(sg).connect(ctx.destination); sub.start(t); sub.stop(t+0.06);
+}
+
+function playSound() {
+  if (!_soundEnabled) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  switch (_soundVariant) {
+    case "clack": synthClack(ctx, 0.5, t); break;
+    case "click": synthClick(ctx, 0.5, t); break;
+    case "soft":  synthSoft(ctx, 0.5, t); break;
+  }
+}
+
+// ════════════════════════════════════════════
+// SPLIT-FLAP ENGINE (vanilla JS)
+// ════════════════════════════════════════════
+
+const CHARS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.:-/+!?".split("");
+
+const PALETTES = {
+  dark:    { text:"#e8e6e1", topBg:"#202025", botBg:"#19191d", border:"#2e2e33", div:"#0a0a0c" },
+  light:   { text:"#1a1a1d", topBg:"#eae7df", botBg:"#ddd9d0", border:"#c8c4ba", div:"#b8b4aa" },
+  ranger:  { text:"#4ade80", topBg:"#141a16", botBg:"#0f1512", border:"#1e2e22", div:"#0a0c0a" },
+  patriot: { text:"#e8e6e1", topBg:"#141828", botBg:"#0f1320", border:"#1e2440", div:"#080a14" },
+  red:     { text:"#ff6b6b", topBg:"#1e1416", botBg:"#181012", border:"#2e1e22", div:"#0c0808" },
+};
+
+const SIZE_MAP = {
+  sm: { w:30, h:42, fs:22, dh:2, r:3 },
+  md: { w:46, h:64, fs:36, dh:2, r:5 },
+  lg: { w:64, h:90, fs:52, dh:3, r:6 },
+  xl: { w:82, h:114, fs:66, dh:3, r:7 },
+};
+
+function stepsTo(from, to) {
+  const a = CHARS.indexOf(from), b = CHARS.indexOf(to);
+  if (a < 0 || b < 0 || a === b) return [];
+  const out = []; let i = a;
+  while (i !== b) { i = (i + 1) % CHARS.length; out.push(CHARS[i]); }
+  return out;
+}
+
+class FlapCharEl {
+  constructor(container, opts = {}) {
+    this.size = opts.size || "md";
+    this.color = opts.color || "dark";
+    this.variant = opts.variant || "modern";
+    this.flipMs = opts.flipMs || 100;
+    this.current = " ";
+    this.queue = [];
+    this.busy = false;
+
+    const S = SIZE_MAP[this.size];
+    const P = PALETTES[this.color];
+    const isClassic = this.variant === "classic";
+    const r = isClassic ? 3 : S.r;
+
+    // Root
+    this.el = document.createElement("div");
+    this.el.className = "flap-char";
+    this.el.style.cssText = `width:${S.w}px;height:${S.h}px;--fh:${S.h}px;--fs:${S.fs}px;--dur:${this.flipMs}ms;--dh:${S.dh}px;--r:${r}px;`;
+
+    // Back top (shows NEXT char when top flap falls away)
+    this.backTop = this._makeHalf("half-top back", P.topBg, P.text, isClassic);
+    this.backTopSpan = this.backTop.querySelector("span");
+    this.el.appendChild(this.backTop);
+
+    // Back bottom (shows CURRENT char)
+    this.backBot = this._makeHalf("half-bot back", P.botBg, P.text, isClassic);
+    this.backBotSpan = this.backBot.querySelector("span");
+    this.el.appendChild(this.backBot);
+
+    // Divider
+    const div = document.createElement("div");
+    div.className = "divider";
+    div.style.background = P.div;
+    this.el.appendChild(div);
+
+    // Border
+    const brd = document.createElement("div");
+    brd.className = "border-overlay";
+    brd.style.border = `1px solid ${P.border}`;
+    this.el.appendChild(brd);
+
+    // Store palette ref
+    this.P = P;
+    this.isClassic = isClassic;
+
+    container.appendChild(this.el);
+  }
+
+  _makeHalf(cls, bg, color, texture) {
+    const d = document.createElement("div");
+    d.className = "half " + cls;
+    const S = SIZE_MAP[this.size];
+    d.style.height = (S.h / 2) + "px";
+    d.style.background = bg;
+    const s = document.createElement("span");
+    s.style.color = color;
+    s.textContent = " ";
+    d.appendChild(s);
+    if (texture) {
+      const t = document.createElement("div");
+      t.className = "texture";
+      d.appendChild(t);
+    }
+    return d;
+  }
+
+  setTarget(ch) {
+    const t = (ch || " ").toUpperCase();
+    const steps = stepsTo(this.current, t);
+    if (!steps.length) return;
+    this.queue.push(...steps);
+    this._process();
+  }
+
+  _process() {
+    if (this.busy || !this.queue.length) return;
+    this.busy = true;
+    const next = this.queue.shift();
+    const S = SIZE_MAP[this.size];
+    const P = this.P;
+
+    // Update back-top to show incoming char
+    this.backTopSpan.textContent = next;
+
+    // Create flip-top (shows current, folds down)
+    const ft = this._makeHalf("half-top flip-top", P.topBg, P.text, this.isClassic);
+    ft.querySelector("span").textContent = this.current;
+    ft.style.height = (S.h / 2) + "px";
+    this.el.appendChild(ft);
+
+    // Create flip-bot (shows next, swings up)
+    const fb = this._makeHalf("half-bot flip-bot", P.botBg, P.text, this.isClassic);
+    fb.querySelector("span").textContent = next;
+    fb.style.height = (S.h / 2) + "px";
+    this.el.appendChild(fb);
+
+    // After animation completes
+    const totalTime = this.flipMs + (this.flipMs * 0.45) + 30;
+    setTimeout(() => {
+      // Clean up flaps
+      if (ft.parentNode) ft.remove();
+      if (fb.parentNode) fb.remove();
+
+      // Update static displays
+      this.current = next;
+      this.backTopSpan.textContent = next;
+      this.backBotSpan.textContent = next;
+
+      // Sound
+      playSound();
+
+      // Settle bounce on bottom half
+      this.backBot.classList.add("settled");
+      setTimeout(() => this.backBot.classList.remove("settled"), 150);
+
+      this.busy = false;
+      this._process();
+    }, totalTime);
+  }
+}
+
+class SplitFlapDisplay {
+  constructor(container, opts = {}) {
+    this.container = container;
+    this.length = opts.length || 10;
+    this.size = opts.size || "md";
+    this.color = opts.color || "dark";
+    this.variant = opts.variant || "modern";
+    this.flipMs = opts.flipMs || 100;
+    this.stagger = opts.stagger || 40;
+    this.gap = opts.gap || 4;
+    this.chars = [];
+
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText = `display:inline-flex;gap:${this.gap}px;flex-wrap:wrap;`;
+    wrapper.setAttribute("role", "status");
+    wrapper.setAttribute("aria-live", "polite");
+
+    for (let i = 0; i < this.length; i++) {
+      const fc = new FlapCharEl(wrapper, {
+        size: this.size, color: this.color,
+        variant: this.variant, flipMs: this.flipMs,
+      });
+      this.chars.push(fc);
+    }
+    container.appendChild(wrapper);
+  }
+
+  setValue(text) {
+    const padded = (text || "").toUpperCase().padEnd(this.length, " ").slice(0, this.length);
+    padded.split("").forEach((ch, i) => {
+      setTimeout(() => this.chars[i].setTarget(ch), i * this.stagger);
+    });
+  }
+
+  destroy() {
+    this.container.innerHTML = "";
+    this.chars = [];
+  }
+}
+
+// ════════════════════════════════════════════
+// HOUSING HELPER
+// ════════════════════════════════════════════
+function makeHousing(parent, label) {
+  const h = document.createElement("div");
+  h.className = "housing";
+  if (label) {
+    const l = document.createElement("div");
+    l.className = "label";
+    l.textContent = label;
+    h.appendChild(l);
+  }
+  [{top:"8px",left:"8px"},{top:"8px",right:"8px"},{bottom:"8px",left:"8px"},{bottom:"8px",right:"8px"}].forEach(p => {
+    const b = document.createElement("div");
+    b.className = "bolt";
+    Object.assign(b.style, p);
+    h.appendChild(b);
+  });
+  parent.appendChild(h);
+  return h;
+}
+
+// ════════════════════════════════════════════
+// DEMO SETUPS
+// ════════════════════════════════════════════
+
+// 1 — Hero cycle
+const heroEl = document.getElementById("demo-hero");
+const hero = new SplitFlapDisplay(heroEl, { length: 18, size: "lg", color: "ranger", variant: "modern", flipMs: 80, stagger: 30 });
+const heroPhrases = ["RANGER VENTURES", "I BUILD AI SYSTEMS", "THAT SHIP TO PROD", "ZACH VARNEY"];
+let heroIdx = 0;
+hero.setValue(heroPhrases[0]);
+setInterval(() => { heroIdx = (heroIdx + 1) % heroPhrases.length; hero.setValue(heroPhrases[heroIdx]); }, 4000);
+
+// 2 — Departure board
+const boardEl = document.getElementById("demo-board");
+const boardHousing = makeHousing(boardEl, "mission status");
+const boardContent = document.createElement("div");
+boardContent.style.cssText = "display:flex;flex-direction:column;gap:12px;";
+
+// Column headers
+const hdr = document.createElement("div");
+hdr.style.cssText = "display:flex;gap:16px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#444;letter-spacing:0.12em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid #1a1a1d;";
+hdr.innerHTML = '<span style="width:210px">Project</span><span style="width:210px">Status</span><span>Year</span>';
+boardContent.appendChild(hdr);
+
+const boardRows = [
+  { proj:"LYTHO", status:"ACTIVE", yr:"2024", pc:"ranger", sc:"patriot" },
+  { proj:"AVHA", status:"BUILDING", yr:"2025", pc:"ranger", sc:"patriot" },
+  { proj:"GENESIS", status:"TESTING", yr:"2025", pc:"ranger", sc:"patriot" },
+];
+const boardDisplays = [];
+boardRows.forEach((r, ri) => {
+  const row = document.createElement("div");
+  row.style.cssText = "display:flex;gap:16px;align-items:center;";
+  const d1 = new SplitFlapDisplay(row, { length:8, size:"sm", color:"ranger", variant:"classic", flipMs:65, stagger:22+ri*6 });
+  const d2 = new SplitFlapDisplay(row, { length:8, size:"sm", color:"patriot", variant:"classic", flipMs:65, stagger:35+ri*6 });
+  const d3 = new SplitFlapDisplay(row, { length:4, size:"sm", color:"dark", variant:"classic", flipMs:65, stagger:50+ri*6 });
+  boardDisplays.push({d1,d2,d3,r});
+  boardContent.appendChild(row);
+});
+boardHousing.appendChild(boardContent);
+setTimeout(() => {
+  boardDisplays.forEach(({d1,d2,d3,r}) => { d1.setValue(r.proj); d2.setValue(r.status); d3.setValue(r.yr); });
+}, 800);
+
+// 3 — Patriot
+const pat1 = new SplitFlapDisplay(document.getElementById("patriot-line1"), { length:14, size:"xl", color:"patriot", variant:"modern", flipMs:90, stagger:35 });
+const pat2 = new SplitFlapDisplay(document.getElementById("patriot-line2"), { length:14, size:"md", color:"red", variant:"modern", flipMs:70, stagger:28 });
+setTimeout(() => { pat1.setValue("ZACH VARNEY"); pat2.setValue("AI CONSULTANT"); }, 500);
+
+// 4 — Stats
+const statsEl = document.getElementById("demo-stats");
+const statsHousing = makeHousing(statsEl, "metrics");
+const statsRow = document.createElement("div");
+statsRow.style.cssText = "display:flex;gap:32px;flex-wrap:wrap;justify-content:center;";
+const statsData = [
+  { v:"10+", l:"Years B2B SaaS" },
+  { v:"2025", l:"Went Independent" },
+  { v:"24/7", l:"Systems Live" },
+];
+const statsDisplays = [];
+statsData.forEach(s => {
+  const wrap = document.createElement("div");
+  wrap.style.textAlign = "center";
+  const d = new SplitFlapDisplay(wrap, { length:4, size:"md", color:"ranger", variant:"classic", flipMs:85, stagger:45 });
+  const lbl = document.createElement("div");
+  lbl.style.cssText = "font-family:'DM Sans',sans-serif;font-size:11px;color:#4e4e53;margin-top:8px;";
+  lbl.textContent = s.l;
+  wrap.appendChild(lbl);
+  statsRow.appendChild(wrap);
+  statsDisplays.push({ d, v: s.v });
+});
+statsHousing.appendChild(statsRow);
+
+function triggerStats() {
+  statsDisplays.forEach(s => { s.d.setValue("    "); });
+  setTimeout(() => { statsDisplays.forEach(s => { s.d.setValue(s.v); }); }, 100);
+  document.getElementById("stats-btn").textContent = "↻ Replay";
+}
+
+// 5 — Clock
+const clockEl = document.getElementById("demo-clock");
+const clockHousing = makeHousing(clockEl, "local time");
+const clockRow = document.createElement("div");
+clockRow.style.cssText = "display:flex;align-items:center;gap:28px;flex-wrap:wrap;";
+const clockDisp = new SplitFlapDisplay(clockRow, { length:8, size:"md", color:"ranger", variant:"classic", flipMs:100, stagger:0 });
+
+const clockSep = document.createElement("div");
+clockSep.style.cssText = "height:50px;width:1px;background:#1e1e22;";
+clockRow.appendChild(clockSep);
+
+const statusWrap = document.createElement("div");
+const statusLabel = document.createElement("div");
+statusLabel.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:9px;color:#444;letter-spacing:0.1em;margin-bottom:6px;text-transform:uppercase;";
+statusLabel.textContent = "STATUS";
+statusWrap.appendChild(statusLabel);
+const statusDisp = new SplitFlapDisplay(statusWrap, { length:10, size:"sm", color:"patriot", variant:"classic", flipMs:70, stagger:35 });
+clockRow.appendChild(statusWrap);
+clockHousing.appendChild(clockRow);
+
+statusDisp.setValue("BUILDING");
+function updateClock() {
+  const d = new Date();
+  const t = [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2,"0")).join(":");
+  clockDisp.setValue(t);
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// 6 — Board Mode
+const boardModeEl = document.getElementById("demo-board-mode");
+const boardModeHousing = makeHousing(boardModeEl, "flight info");
+const boardModeContent = document.createElement("div");
+boardModeContent.style.cssText = "display:flex;flex-direction:column;gap:8px;";
+
+// Board mode header
+const bmHdr = document.createElement("div");
+bmHdr.style.cssText = "display:flex;gap:10px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#444;letter-spacing:0.12em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid #1a1a1d;";
+bmHdr.innerHTML = '<span style="width:130px">Time</span><span style="width:240px">Destination</span><span style="width:170px">Flight</span><span>Status</span>';
+boardModeContent.appendChild(bmHdr);
+
+const boardModeData = [
+  [["14:30","PARIS CDG","AF 1234","ON TIME"],["15:10","LONDON LHR","BA 456","BOARDING"],["16:45","TOKYO NRT","JL 42","DELAYED"]],
+  [["14:30","BERLIN TXL","LH 890","BOARDING"],["15:10","NEW YORK JFK","DL 100","ON TIME"],["16:45","DUBAI DXB","EK 231","GATE B12"]],
+];
+let bmIdx = 0;
+const bmDisplays = [];
+
+for (let r = 0; r < 3; r++) {
+  const row = document.createElement("div");
+  row.style.cssText = "display:flex;gap:10px;align-items:center;";
+  // Board mode: very low stagger (near-simultaneous), with extra spin built into the engine
+  const d1 = new SplitFlapDisplay(row, { length:5, size:"sm", color:"dark", variant:"classic", flipMs:70, stagger:5 });
+  const d2 = new SplitFlapDisplay(row, { length:10, size:"sm", color:"ranger", variant:"classic", flipMs:75, stagger:5 });
+  const d3 = new SplitFlapDisplay(row, { length:7, size:"sm", color:"dark", variant:"classic", flipMs:65, stagger:5 });
+  const d4 = new SplitFlapDisplay(row, { length:8, size:"sm", color:"patriot", variant:"classic", flipMs:80, stagger:5 });
+  bmDisplays.push([d1,d2,d3,d4]);
+  boardModeContent.appendChild(row);
+}
+boardModeHousing.appendChild(boardModeContent);
+
+function setBoardMode(dataIdx) {
+  const data = boardModeData[dataIdx];
+  data.forEach((cols, r) => {
+    // Small random delay per display for board-mode feel
+    cols.forEach((val, c) => {
+      setTimeout(() => bmDisplays[r][c].setValue(val), Math.random() * 100);
+    });
+  });
+}
+setTimeout(() => setBoardMode(0), 800);
+
+function triggerBoard() {
+  bmIdx = (bmIdx + 1) % boardModeData.length;
+  setBoardMode(bmIdx);
+  document.getElementById("board-btn").textContent = "↻ Update Board";
+}
+
+// 7 — Spinning
+const spinEl = document.getElementById("demo-spinning");
+const spinDisplay = new SplitFlapDisplay(spinEl, { length:12, size:"md", color:"ranger", variant:"modern", flipMs:60, stagger:15 });
+let spinActive = true;
+let spinInterval = null;
+
+function startSpin() {
+  // Simulate spinning by rapidly cycling random targets
+  spinInterval = setInterval(() => {
+    const rand = Array.from({length:12}, () => CHARS[Math.floor(Math.random()*CHARS.length)]).join("");
+    spinDisplay.setValue(rand);
+  }, 200);
+}
+startSpin();
+
+function toggleSpin() {
+  const btn = document.getElementById("spin-btn");
+  if (spinActive) {
+    clearInterval(spinInterval);
+    spinDisplay.setValue("HELLO WORLD!");
+    btn.textContent = "▶ Spin";
+    spinActive = false;
+  } else {
+    startSpin();
+    btn.textContent = "■ Stop";
+    spinActive = true;
+  }
+}
+
+// 8 — Playground
+function toggleSound(btn) {
+  _soundEnabled = !_soundEnabled;
+  btn.textContent = _soundEnabled ? "on" : "off";
+  btn.classList.toggle("active", _soundEnabled);
+  // Initialize AudioContext on first user gesture
+  if (_soundEnabled) getAudioCtx();
+}
+
+function pgSetSound(variant, btn) {
+  _soundVariant = variant;
+  document.querySelectorAll('[data-group="sndvar"]').forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  updatePlayground();
+}
+
+let pgState = { size:"sm", variant:"modern", color:"ranger", mode:"cascade" };
+let pgDisplay = null;
+
+function pgSet(group, val, btn) {
+  pgState[group] = val;
+  document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  updatePlayground();
+}
+
+function updatePlayground() {
+  const text = document.getElementById("pg-input").value || "";
+  const el = document.getElementById("demo-playground");
+  el.innerHTML = "";
+
+  const len = Math.max(text.length, 10);
+  
+  if (pgState.variant === "classic") {
+    const h = makeHousing(el);
+    h.style.padding = "28px 20px";
+    const stag = pgState.mode === "board" ? 5 : 25;
+    pgDisplay = new SplitFlapDisplay(h, { length:len, size:pgState.size, color:pgState.color, variant:"classic", flipMs:75, stagger:stag });
+  } else {
+    const surf = document.createElement("div");
+    surf.className = "surface";
+    surf.style.padding = "32px 20px";
+    el.appendChild(surf);
+    const stag = pgState.mode === "board" ? 5 : 25;
+    pgDisplay = new SplitFlapDisplay(surf, { length:len, size:pgState.size, color:pgState.color, variant:"modern", flipMs:75, stagger:stag });
+  }
+  pgDisplay.setValue(text);
+
+  const soundLines = _soundEnabled
+    ? `  <span style="color:#93c5fd">sound</span><br>` +
+      `  <span style="color:#93c5fd">soundVariant</span>=<span style="color:#86efac">"${_soundVariant}"</span><br>`
+    : "";
+  document.getElementById("pg-code").innerHTML =
+    `<span style="color:#4e4e53">// npm i react-split-flap-display</span><br>` +
+    `<span style="color:#4ade80">&lt;SplitFlap</span><br>` +
+    `  <span style="color:#93c5fd">value</span>=<span style="color:#86efac">"${text}"</span><br>` +
+    `  <span style="color:#93c5fd">size</span>=<span style="color:#86efac">"${pgState.size}"</span><br>` +
+    `  <span style="color:#93c5fd">variant</span>=<span style="color:#86efac">"${pgState.variant}"</span><br>` +
+    `  <span style="color:#93c5fd">color</span>=<span style="color:#86efac">"${pgState.color}"</span><br>` +
+    (pgState.mode === "board" ? `  <span style="color:#93c5fd">mode</span>=<span style="color:#86efac">"board"</span><br>` : "") +
+    soundLines +
+    `<span style="color:#4ade80">/&gt;</span>`;
+}
+updatePlayground();
+</script>
+</body>
+</html>
