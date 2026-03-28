@@ -6,6 +6,8 @@
 
 A composable React split-flap display component with realistic 3D flip animation, mechanical sound synthesis, board mode, and pre-built templates. Zero dependencies beyond React.
 
+**[Live Demo](https://varnasus.github.io/split-flap-display/demo/)**
+
 Inspired by train station departure boards and airport Solari displays. Characters don't just swap — they flip through the alphabet one by one, with authentic forward-only cycling and staggered cascade timing.
 
 ## Features
