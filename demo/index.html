@@ -401,6 +401,7 @@ class FlapCharEl {
     this.color = opts.color || "dark";
     this.variant = opts.variant || "modern";
     this.flipMs = opts.flipMs || 100;
+    this.sound = opts.sound || false;
     this.current = " ";
     this.queue = [];
     this.busy = false;
@@ -504,8 +505,8 @@ class FlapCharEl {
       this.backTopSpan.textContent = next;
       this.backBotSpan.textContent = next;
 
-      // Sound
-      playSound();
+      // Sound (only if this instance has sound enabled)
+      if (this.sound) playSound();
 
       // Settle bounce on bottom half
       this.backBot.classList.add("settled");
@@ -527,6 +528,7 @@ class SplitFlapDisplay {
     this.flipMs = opts.flipMs || 100;
     this.stagger = opts.stagger || 40;
     this.gap = opts.gap || 4;
+    this.sound = opts.sound || false;
     this.chars = [];
 
     const wrapper = document.createElement("div");
@@ -538,6 +540,7 @@ class SplitFlapDisplay {
       const fc = new FlapCharEl(wrapper, {
         size: this.size, color: this.color,
         variant: this.variant, flipMs: this.flipMs,
+        sound: this.sound,
       });
       this.chars.push(fc);
     }
@@ -802,14 +805,14 @@ function updatePlayground() {
     const h = makeHousing(el);
     h.style.padding = "28px 20px";
     const stag = pgState.mode === "board" ? 5 : 25;
-    pgDisplay = new SplitFlapDisplay(h, { length:len, size:pgState.size, color:pgState.color, variant:"classic", flipMs:75, stagger:stag });
+    pgDisplay = new SplitFlapDisplay(h, { length:len, size:pgState.size, color:pgState.color, variant:"classic", flipMs:75, stagger:stag, sound:_soundEnabled });
   } else {
     const surf = document.createElement("div");
     surf.className = "surface";
     surf.style.padding = "32px 20px";
     el.appendChild(surf);
     const stag = pgState.mode === "board" ? 5 : 25;
-    pgDisplay = new SplitFlapDisplay(surf, { length:len, size:pgState.size, color:pgState.color, variant:"modern", flipMs:75, stagger:stag });
+    pgDisplay = new SplitFlapDisplay(surf, { length:len, size:pgState.size, color:pgState.color, variant:"modern", flipMs:75, stagger:stag, sound:_soundEnabled });
   }
   pgDisplay.setValue(text);
 
