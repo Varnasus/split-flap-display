@@ -1,4 +1,4 @@
-# CLAUDE.md — react-split-flap-display
+# CLAUDE.md — clackboard
 
 ## What This Is
 A React component library published to npm that renders split-flap / Solari-style displays with realistic 3D flip animation. Zero dependencies beyond React peer dep. Includes board templates (DepartureBoard, ArrivalBoard, ScoreBoard, CountdownBoard, MessageBoard) for drop-in real-world use.

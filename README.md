@@ -1,8 +1,8 @@
-# react-split-flap-display
+# clackboard
 
-[![npm version](https://img.shields.io/npm/v/react-split-flap-display)](https://www.npmjs.com/package/react-split-flap-display)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/react-split-flap-display)](https://bundlephobia.com/package/react-split-flap-display)
-[![license](https://img.shields.io/npm/l/react-split-flap-display)](./LICENSE)
+[![npm version](https://img.shields.io/npm/v/clackboard)](https://www.npmjs.com/package/clackboard)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/clackboard)](https://bundlephobia.com/package/clackboard)
+[![license](https://img.shields.io/npm/l/clackboard)](./LICENSE)
 
 A composable React split-flap display component with realistic 3D flip animation, mechanical sound synthesis, board mode, and pre-built templates. Zero dependencies beyond React.
 
@@ -31,7 +31,7 @@ Inspired by train station departure boards and airport Solari displays. Characte
 ## Install
 
 ```bash
-npm install react-split-flap-display
+npm install clackboard
 ```
 
 **Requirements:** React 17+ and a monospace font like [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) for best results.
@@ -43,7 +43,7 @@ npm install react-split-flap-display
 ## Quick Start
 
 ```tsx
-import { SplitFlap } from "react-split-flap-display";
+import { SplitFlap } from "clackboard";
 
 function App() {
   return <SplitFlap value="HELLO WORLD" size="lg" color="ranger" />;
@@ -55,7 +55,7 @@ function App() {
 ### Cycling headline
 
 ```tsx
-import { SplitFlap, useCyclingMessages } from "react-split-flap-display";
+import { SplitFlap, useCyclingMessages } from "clackboard";
 
 function Hero() {
   const message = useCyclingMessages(["HELLO WORLD", "SPLIT FLAP", "OPEN SOURCE"], 4);
@@ -74,7 +74,7 @@ All flaps spin at once, then settle independently:
 ### Live clock with hooks
 
 ```tsx
-import { SplitFlap, useClock, NUMERIC_CHARS } from "react-split-flap-display";
+import { SplitFlap, useClock, NUMERIC_CHARS } from "clackboard";
 
 function Clock() {
   const time = useClock("HH:MM:SS");
@@ -95,7 +95,7 @@ function Clock() {
 ### Price display
 
 ```tsx
-import { SplitFlap, NUMERIC_CHARS, usePriceDisplay } from "react-split-flap-display";
+import { SplitFlap, NUMERIC_CHARS, usePriceDisplay } from "clackboard";
 
 function StockPrice({ price }: { price: number }) {
   const display = usePriceDisplay(price);
@@ -106,7 +106,7 @@ function StockPrice({ price }: { price: number }) {
 ### Drop-in departure board
 
 ```tsx
-import { DepartureBoard } from "react-split-flap-display";
+import { DepartureBoard } from "clackboard";
 
 <DepartureBoard
   rows={[
@@ -122,7 +122,7 @@ import { DepartureBoard } from "react-split-flap-display";
 ### Countdown timer
 
 ```tsx
-import { CountdownBoard } from "react-split-flap-display";
+import { CountdownBoard } from "clackboard";
 
 <CountdownBoard target="2027-01-01T00:00:00" onComplete={() => console.log("Happy New Year!")} />
 ```
@@ -130,7 +130,7 @@ import { CountdownBoard } from "react-split-flap-display";
 ### Spinning / loading state
 
 ```tsx
-import { SplitFlap } from "react-split-flap-display";
+import { SplitFlap } from "clackboard";
 
 function Loader({ loading, text }: { loading: boolean; text: string }) {
   return <SplitFlap value={text} length={12} spinning={loading} size="md" color="ranger" />;
@@ -147,7 +147,7 @@ function Loader({ loading, text }: { loading: boolean; text: string }) {
 
 ```tsx
 import { useState, useEffect, useRef } from "react";
-import { SplitFlap } from "react-split-flap-display";
+import { SplitFlap } from "clackboard";
 
 function Stats() {
   const [visible, setVisible] = useState(false);
@@ -372,7 +372,7 @@ Three built-in sound variants, synthesized at runtime via Web Audio API — no a
 **Standalone functions:**
 
 ```tsx
-import { playSound, resumeAudio } from "react-split-flap-display";
+import { playSound, resumeAudio } from "clackboard";
 
 playSound("clack", 0.5);       // Fire-and-forget
 resumeAudio();                   // Unlock audio on iOS/Safari (call from user gesture)
@@ -387,7 +387,7 @@ resumeAudio();                   // Unlock audio on iOS/Safari (call from user g
 | `ALPHA_CHARS` | `" A-Z"` | Letters only — faster alpha transitions |
 
 ```tsx
-import { SplitFlap, NUMERIC_CHARS } from "react-split-flap-display";
+import { SplitFlap, NUMERIC_CHARS } from "clackboard";
 
 // A clock digit going 5→6 takes 1 step with NUMERIC_CHARS vs ~40 with CHARS
 <SplitFlap value="12:45" chars={NUMERIC_CHARS} />

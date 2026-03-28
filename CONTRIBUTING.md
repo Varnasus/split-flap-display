@@ -1,4 +1,4 @@
-# Contributing to react-split-flap-display
+# Contributing to clackboard
 
 Thanks for your interest in contributing! Here's how to get started.
 
@@ -6,7 +6,7 @@ Thanks for your interest in contributing! Here's how to get started.
 
 ```bash
 git clone https://github.com/Varnasus/split-flap-display.git
-cd react-split-flap-display
+cd clackboard
 npm install
 ```
 
