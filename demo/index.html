@@ -465,17 +465,39 @@ class FlapCharEl {
     this.backBotSpan = this.backBot.querySelector("span");
     this.el.appendChild(this.backBot);
 
-    // Divider
+    // Inter-flap shadow on bottom half (classic only)
+    if (isClassic) {
+      this.backBot.style.boxShadow = "inset 0 3px 6px -2px rgba(0,0,0,0.5)";
+    }
+
+    // Divider with inset seam shadow
     const div = document.createElement("div");
     div.className = "divider";
     div.style.background = P.div;
+    div.style.boxShadow = "0 -1px 2px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.4)";
     this.el.appendChild(div);
+
+    // Hinge marks (classic only)
+    if (isClassic) {
+      [{left:"3px"},{right:"3px"}].forEach(pos => {
+        const h = document.createElement("div");
+        Object.assign(h.style, {
+          position:"absolute", top:"50%", width:"4px", height:"4px",
+          marginTop:"-2px", borderRadius:"50%", background:"#2a2a2e",
+          border:"1px solid #3a3a3e", zIndex:"12", ...pos
+        });
+        this.el.appendChild(h);
+      });
+    }
 
     // Border
     const brd = document.createElement("div");
     brd.className = "border-overlay";
     brd.style.border = `1px solid ${P.border}`;
     this.el.appendChild(brd);
+
+    // Isolation for compositing safety
+    this.el.style.isolation = "isolate";
 
     // Store palette ref
     this.P = P;
@@ -526,6 +548,14 @@ class FlapCharEl {
     const ft = this._makeHalf(ftClass, P.topBg, P.text, this.isClassic);
     ft.querySelector("span").textContent = this.current;
     ft.style.height = (S.h / 2) + "px";
+    // Dynamic lighting overlay on top flap
+    const ftLight = document.createElement("div");
+    Object.assign(ftLight.style, {
+      position:"absolute", inset:"0",
+      background:"linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(0,0,0,0.12))",
+      pointerEvents:"none"
+    });
+    ft.appendChild(ftLight);
     this.el.appendChild(ft);
 
     // Create flip-bot (shows next, swings up) — easing-aware class
@@ -533,6 +563,14 @@ class FlapCharEl {
     const fb = this._makeHalf(fbClass, P.botBg, P.text, this.isClassic);
     fb.querySelector("span").textContent = next;
     fb.style.height = (S.h / 2) + "px";
+    // Dynamic lighting overlay on bottom flap
+    const fbLight = document.createElement("div");
+    Object.assign(fbLight.style, {
+      position:"absolute", inset:"0",
+      background:"linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(255,255,255,0.04))",
+      pointerEvents:"none"
+    });
+    fb.appendChild(fbLight);
     this.el.appendChild(fb);
 
     // After animation completes
