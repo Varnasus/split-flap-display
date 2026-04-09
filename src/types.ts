@@ -4,15 +4,29 @@ export type SplitFlapSize = "sm" | "md" | "lg" | "xl";
 export type SplitFlapVariant = "modern" | "classic";
 export type SplitFlapColor = "dark" | "light" | "ranger" | "patriot" | "red";
 export type SplitFlapMode = "cascade" | "board";
+export type SplitFlapEasing = "linear" | "decelerate" | "spring";
+export type StaggerDirection = "ltr" | "rtl" | "center-out";
+export type SplitFlapLayout = "single" | "board";
+
+export interface SoundOptions {
+  /** Pitch multiplier. 1.0 = default, >1 = higher, <1 = lower. */
+  pitch?: number;
+  /** Decay time multiplier. 1.0 = default, >1 = longer decay, <1 = shorter. */
+  decay?: number;
+}
 
 export interface SplitFlapProps {
-  /** Text to display. Characters flip through the alphabet to reach each target. */
+  /** Text to display (single-row mode). Characters flip through the alphabet to reach each target. */
   value?: string;
-  /** Fixed character count. Pads with spaces if value is shorter. */
+  /** Array of row strings for board layout mode. Used when layout="board". */
+  rows?: string[];
+  /** Fixed character count per row. Pads with spaces if value is shorter. */
   length?: number;
+  /** Number of rows when layout="board". Default: rows.length */
+  rowCount?: number;
   /** Size preset. Default: "md" */
   size?: SplitFlapSize;
-  /** Visual style. "modern" = clean/minimal, "classic" = train station with texture. Default: "modern" */
+  /** Visual style. "modern" = clean/minimal, "classic" = train station with texture + hinge marks. Default: "modern" */
   variant?: SplitFlapVariant;
   /** Color theme. Default: "dark" */
   color?: SplitFlapColor;
@@ -22,10 +36,18 @@ export interface SplitFlapProps {
   flipMs?: number;
   /** Cascade delay between each character starting its flip, in ms. Default: 40 */
   stagger?: number;
+  /** Direction of cascade stagger. Default: "ltr" */
+  staggerDirection?: StaggerDirection;
   /** Pixel gap between characters. Default: 4 */
   gap?: number;
   /** Animation mode. "cascade" = left-to-right wave. "board" = all flaps spin at once and settle independently. Default: "cascade" */
   mode?: SplitFlapMode;
+  /** Layout mode. "single" = one row. "board" = multi-row Vestaboard-style with `rows` prop. Default: "single" */
+  layout?: SplitFlapLayout;
+  /** Easing mode for flip animation. "linear" = current, "decelerate" = mechanical inertia, "spring" = decelerate + enhanced bounce. Default: "linear" */
+  easing?: SplitFlapEasing;
+  /** CSS perspective value (px) for 3D depth. Default: 300 */
+  perspective?: number;
   /** When true, flaps cycle continuously until a value is set. */
   spinning?: boolean;
   /** Enable flip sound. When true, plays a "clack" on each flip landing. */
@@ -36,6 +58,8 @@ export interface SplitFlapProps {
   soundVariant?: SoundVariant;
   /** URL to a custom audio file. Overrides the synthesized sound when provided. */
   soundSrc?: string;
+  /** Fine-tune sound synthesis with pitch and decay multipliers. Ignored when soundSrc is set. */
+  soundOptions?: SoundOptions;
   /** Custom character set. Characters flip forward through this array. */
   chars?: string[];
   /** When true, the initial value flips in from blank on mount instead of appearing statically. */
@@ -73,6 +97,10 @@ export interface FlapCharProps {
   variant?: SplitFlapVariant;
   /** Custom color palette. Overrides `color` when provided. */
   palette?: Palette;
+  /** Easing mode. Default: "linear" */
+  easing?: SplitFlapEasing;
+  /** CSS perspective value (px). Default: 300 */
+  perspective?: number;
   /** Enable flip sound. */
   sound?: boolean;
   /** Volume for flip sound, 0 to 1. Default: 0.5 */
@@ -81,6 +109,8 @@ export interface FlapCharProps {
   soundVariant?: SoundVariant;
   /** URL to a custom audio file. Overrides synthesis. */
   soundSrc?: string;
+  /** Sound pitch/decay customization. */
+  soundOptions?: SoundOptions;
   /** Custom character set. */
   chars?: string[];
   /** Called when this character has finished flipping to its target. */
@@ -133,6 +163,8 @@ export interface DepartureBoardProps {
   size?: SplitFlapSize;
   variant?: SplitFlapVariant;
   mode?: SplitFlapMode;
+  easing?: SplitFlapEasing;
+  perspective?: number;
   sound?: boolean;
   volume?: number;
   soundVariant?: SoundVariant;
@@ -155,6 +187,8 @@ export interface ArrivalBoardProps {
   size?: SplitFlapSize;
   variant?: SplitFlapVariant;
   mode?: SplitFlapMode;
+  easing?: SplitFlapEasing;
+  perspective?: number;
   sound?: boolean;
   volume?: number;
   soundVariant?: SoundVariant;
@@ -175,6 +209,8 @@ export interface ScoreBoardProps {
   variant?: SplitFlapVariant;
   color?: SplitFlapColor;
   mode?: SplitFlapMode;
+  easing?: SplitFlapEasing;
+  perspective?: number;
   sound?: boolean;
   volume?: number;
   soundVariant?: SoundVariant;
@@ -190,6 +226,8 @@ export interface CountdownBoardProps {
   size?: SplitFlapSize;
   variant?: SplitFlapVariant;
   color?: SplitFlapColor;
+  easing?: SplitFlapEasing;
+  perspective?: number;
   sound?: boolean;
   volume?: number;
   soundVariant?: SoundVariant;
@@ -210,6 +248,8 @@ export interface MessageBoardProps {
   variant?: SplitFlapVariant;
   color?: SplitFlapColor;
   mode?: SplitFlapMode;
+  easing?: SplitFlapEasing;
+  perspective?: number;
   sound?: boolean;
   volume?: number;
   soundVariant?: SoundVariant;

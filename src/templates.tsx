@@ -61,6 +61,8 @@ export function DepartureBoard({
   size = "sm",
   variant = "classic",
   mode = "board",
+  easing,
+  perspective,
   sound,
   volume,
   soundVariant,
@@ -89,6 +91,8 @@ export function DepartureBoard({
               sound={sound}
               volume={volume}
               soundVariant={soundVariant}
+              easing={easing}
+              perspective={perspective}
               stagger={20 + i * 4}
             />
             <SplitFlap
@@ -101,6 +105,8 @@ export function DepartureBoard({
               sound={sound}
               volume={volume}
               soundVariant={soundVariant}
+              easing={easing}
+              perspective={perspective}
               stagger={25 + i * 4}
             />
             <SplitFlap
@@ -113,6 +119,8 @@ export function DepartureBoard({
               sound={sound}
               volume={volume}
               soundVariant={soundVariant}
+              easing={easing}
+              perspective={perspective}
               stagger={30 + i * 4}
             />
             <SplitFlap
@@ -125,6 +133,8 @@ export function DepartureBoard({
               sound={sound}
               volume={volume}
               soundVariant={soundVariant}
+              easing={easing}
+              perspective={perspective}
               stagger={35 + i * 4}
             />
             <SplitFlap
@@ -141,6 +151,8 @@ export function DepartureBoard({
               sound={sound}
               volume={volume}
               soundVariant={soundVariant}
+              easing={easing}
+              perspective={perspective}
               stagger={40 + i * 4}
             />
           </div>
@@ -167,6 +179,8 @@ export function ArrivalBoard({
   size = "sm",
   variant = "classic",
   mode = "board",
+  easing,
+  perspective,
   sound,
   volume,
   soundVariant,
@@ -195,6 +209,8 @@ export function ArrivalBoard({
               sound={sound}
               volume={volume}
               soundVariant={soundVariant}
+              easing={easing}
+              perspective={perspective}
               stagger={20 + i * 4}
             />
             <SplitFlap
@@ -207,6 +223,8 @@ export function ArrivalBoard({
               sound={sound}
               volume={volume}
               soundVariant={soundVariant}
+              easing={easing}
+              perspective={perspective}
               stagger={25 + i * 4}
             />
             <SplitFlap
@@ -219,6 +237,8 @@ export function ArrivalBoard({
               sound={sound}
               volume={volume}
               soundVariant={soundVariant}
+              easing={easing}
+              perspective={perspective}
               stagger={30 + i * 4}
             />
             <SplitFlap
@@ -231,6 +251,8 @@ export function ArrivalBoard({
               sound={sound}
               volume={volume}
               soundVariant={soundVariant}
+              easing={easing}
+              perspective={perspective}
               stagger={35 + i * 4}
             />
             <SplitFlap
@@ -247,6 +269,8 @@ export function ArrivalBoard({
               sound={sound}
               volume={volume}
               soundVariant={soundVariant}
+              easing={easing}
+              perspective={perspective}
               stagger={40 + i * 4}
             />
           </div>
@@ -275,6 +299,8 @@ export function ScoreBoard({
   variant = "classic",
   color = "ranger",
   mode = "board",
+  easing,
+  perspective,
   sound,
   volume,
   soundVariant,
@@ -299,6 +325,8 @@ export function ScoreBoard({
               sound={sound}
               volume={volume}
               soundVariant={soundVariant}
+              easing={easing}
+              perspective={perspective}
             />
             <div style={labelStyle}>{entry.label}</div>
           </div>
@@ -339,6 +367,8 @@ export function CountdownBoard({
   size = "lg",
   variant = "classic",
   color = "ranger",
+  easing,
+  perspective,
   sound,
   volume,
   soundVariant,
@@ -417,6 +447,8 @@ export function MessageBoard({
   variant = "modern",
   color = "ranger",
   mode = "board",
+  easing,
+  perspective,
   sound,
   volume,
   soundVariant,

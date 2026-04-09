@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.1.0 (2026-04-09)
+
+### Added
+- `easing` prop: `"linear"` (default), `"decelerate"` (mechanical inertia), `"spring"` (enhanced bounce)
+- `perspective` prop: customizable 3D depth (default: 300)
+- `staggerDirection` prop: `"ltr"` (default), `"rtl"`, `"center-out"`
+- `layout` prop: `"single"` (default) or `"board"` for multi-row Vestaboard-style display
+- `rows` prop: array of strings for board layout mode
+- `soundOptions` prop: `{ pitch?, decay? }` for fine-tuning sound synthesis
+- `prefers-reduced-motion` support: animations skipped when OS reduced-motion is enabled
+- Skeuomorphic details for classic variant: hinge marks at divider, inter-flap shadow
+- Dynamic lighting gradient overlays on animated flaps
+- Inset shadow seam between top and bottom halves
+
+### Fixed
+- CSS compositing conflict with `background-clip: text` parents (added `isolation: isolate`)
+
 ## 0.1.0 (2026-03-27)
 
 Initial release.

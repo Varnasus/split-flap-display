@@ -1,3 +1,5 @@
+import type { SoundOptions } from "./types";
+
 export type SoundVariant = "clack" | "click" | "soft";
 
 let audioCtx: AudioContext | null = null;
@@ -40,108 +42,108 @@ function makeNoise(ctx: AudioContext, duration: number): AudioBuffer {
  * "clack" — sharp mechanical snap.
  * Three layered components: noise burst, low thump, latch click.
  */
-function synthClack(ctx: AudioContext, volume: number, t: number): void {
+function synthClack(ctx: AudioContext, volume: number, t: number, pitch: number, decay: number): void {
   // 1. Noise burst (the snap)
-  const noiseBuf = makeNoise(ctx, 0.04);
+  const noiseBuf = makeNoise(ctx, 0.04 * decay);
   const noiseSrc = ctx.createBufferSource();
   noiseSrc.buffer = noiseBuf;
   const bandpass = ctx.createBiquadFilter();
   bandpass.type = "bandpass";
-  bandpass.frequency.value = 3500;
+  bandpass.frequency.value = 3500 * pitch;
   bandpass.Q.value = 1.2;
   const noiseGain = ctx.createGain();
   noiseGain.gain.setValueAtTime(volume * 0.7, t);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.035 * decay);
   noiseSrc.connect(bandpass).connect(noiseGain).connect(ctx.destination);
   noiseSrc.start(t);
-  noiseSrc.stop(t + 0.04);
+  noiseSrc.stop(t + 0.04 * decay);
 
   // 2. Low thump (mechanical body)
   const thump = ctx.createOscillator();
   thump.type = "sine";
-  thump.frequency.setValueAtTime(180, t);
-  thump.frequency.exponentialRampToValueAtTime(60, t + 0.04);
+  thump.frequency.setValueAtTime(180 * pitch, t);
+  thump.frequency.exponentialRampToValueAtTime(60 * pitch, t + 0.04 * decay);
   const thumpGain = ctx.createGain();
   thumpGain.gain.setValueAtTime(volume * 0.5, t);
-  thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+  thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05 * decay);
   thump.connect(thumpGain).connect(ctx.destination);
   thump.start(t);
-  thump.stop(t + 0.05);
+  thump.stop(t + 0.05 * decay);
 
   // 3. Latch click
   const latch = ctx.createOscillator();
   latch.type = "square";
-  latch.frequency.value = 2800;
+  latch.frequency.value = 2800 * pitch;
   const latchGain = ctx.createGain();
   latchGain.gain.setValueAtTime(volume * 0.15, t);
-  latchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.008);
+  latchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.008 * decay);
   latch.connect(latchGain).connect(ctx.destination);
   latch.start(t);
-  latch.stop(t + 0.01);
+  latch.stop(t + 0.01 * decay);
 }
 
 /**
  * "click" — lighter keyboard switch feel.
  * Two components: noise burst through highpass, sine tick.
  */
-function synthClick(ctx: AudioContext, volume: number, t: number): void {
+function synthClick(ctx: AudioContext, volume: number, t: number, pitch: number, decay: number): void {
   // 1. Noise burst
-  const noiseBuf = makeNoise(ctx, 0.025);
+  const noiseBuf = makeNoise(ctx, 0.025 * decay);
   const noiseSrc = ctx.createBufferSource();
   noiseSrc.buffer = noiseBuf;
   const highpass = ctx.createBiquadFilter();
   highpass.type = "highpass";
-  highpass.frequency.value = 4000;
+  highpass.frequency.value = 4000 * pitch;
   const noiseGain = ctx.createGain();
   noiseGain.gain.setValueAtTime(volume * 0.45, t);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.02 * decay);
   noiseSrc.connect(highpass).connect(noiseGain).connect(ctx.destination);
   noiseSrc.start(t);
-  noiseSrc.stop(t + 0.025);
+  noiseSrc.stop(t + 0.025 * decay);
 
   // 2. Tick
   const tick = ctx.createOscillator();
   tick.type = "sine";
-  tick.frequency.value = 4200;
+  tick.frequency.value = 4200 * pitch;
   const tickGain = ctx.createGain();
   tickGain.gain.setValueAtTime(volume * 0.2, t);
-  tickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.006);
+  tickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.006 * decay);
   tick.connect(tickGain).connect(ctx.destination);
   tick.start(t);
-  tick.stop(t + 0.008);
+  tick.stop(t + 0.008 * decay);
 }
 
 /**
  * "soft" — muted thud for ambient/background use.
  * Two components: lowpass noise, sub thump.
  */
-function synthSoft(ctx: AudioContext, volume: number, t: number): void {
+function synthSoft(ctx: AudioContext, volume: number, t: number, pitch: number, decay: number): void {
   // 1. Noise burst
-  const noiseBuf = makeNoise(ctx, 0.05);
+  const noiseBuf = makeNoise(ctx, 0.05 * decay);
   const noiseSrc = ctx.createBufferSource();
   noiseSrc.buffer = noiseBuf;
   const lowpass = ctx.createBiquadFilter();
   lowpass.type = "lowpass";
-  lowpass.frequency.value = 800;
+  lowpass.frequency.value = 800 * pitch;
   lowpass.Q.value = 0.5;
   const noiseGain = ctx.createGain();
   noiseGain.gain.setValueAtTime(volume * 0.35, t);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.045 * decay);
   noiseSrc.connect(lowpass).connect(noiseGain).connect(ctx.destination);
   noiseSrc.start(t);
-  noiseSrc.stop(t + 0.05);
+  noiseSrc.stop(t + 0.05 * decay);
 
   // 2. Sub thump
   const sub = ctx.createOscillator();
   sub.type = "sine";
-  sub.frequency.setValueAtTime(100, t);
-  sub.frequency.exponentialRampToValueAtTime(40, t + 0.05);
+  sub.frequency.setValueAtTime(100 * pitch, t);
+  sub.frequency.exponentialRampToValueAtTime(40 * pitch, t + 0.05 * decay);
   const subGain = ctx.createGain();
   subGain.gain.setValueAtTime(volume * 0.3, t);
-  subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+  subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.06 * decay);
   sub.connect(subGain).connect(ctx.destination);
   sub.start(t);
-  sub.stop(t + 0.06);
+  sub.stop(t + 0.06 * decay);
 }
 
 /**
@@ -151,11 +153,13 @@ function synthSoft(ctx: AudioContext, volume: number, t: number): void {
  * @param variant   Which sound to synthesize: "clack", "click", or "soft"
  * @param volume    Volume from 0 to 1. Default: 0.5
  * @param customSrc Optional URL to an external audio file (overrides synthesis)
+ * @param options   Optional pitch/decay multipliers (ignored when customSrc is set)
  */
 export function playSound(
   variant: SoundVariant,
   volume: number,
-  customSrc?: string
+  customSrc?: string,
+  options?: SoundOptions
 ): void {
   // Custom audio source path — use HTML Audio element
   if (customSrc) {
@@ -177,16 +181,18 @@ export function playSound(
   const ctx = getContext();
   if (!ctx) return;
   const t = ctx.currentTime;
+  const pitch = options?.pitch ?? 1;
+  const decay = options?.decay ?? 1;
 
   switch (variant) {
     case "clack":
-      synthClack(ctx, volume, t);
+      synthClack(ctx, volume, t, pitch, decay);
       break;
     case "click":
-      synthClick(ctx, volume, t);
+      synthClick(ctx, volume, t, pitch, decay);
       break;
     case "soft":
-      synthSoft(ctx, volume, t);
+      synthSoft(ctx, volume, t, pitch, decay);
       break;
   }
 }

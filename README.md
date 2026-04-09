@@ -17,7 +17,12 @@ Inspired by train station departure boards and airport Solari displays. Characte
 - **Sound synthesis** — Three Web Audio API sound variants (clack, click, soft) — no audio files
 - **5 color themes** — dark, light, ranger, patriot, red — plus fully custom palettes
 - **4 size presets** — sm, md, lg, xl
-- **2 visual styles** — modern (clean) and classic (scan-line texture)
+- **2 visual styles** — modern (clean) and classic (scan-line texture, hinge marks, inter-flap shadow)
+- **3 easing modes** — linear, decelerate (mechanical inertia), spring (enhanced bounce)
+- **Board layout** — multi-row Vestaboard-style with `layout="board"` and `rows` array
+- **Stagger direction** — ltr, rtl, center-out cascade patterns
+- **Customizable perspective** — control 3D depth with `perspective` prop
+- **prefers-reduced-motion** — automatically skips animation when OS setting is enabled
 - **Pre-built templates** — DepartureBoard, ArrivalBoard, ScoreBoard, CountdownBoard, MessageBoard
 - **Hooks** — `useClock`, `useCountdown`, `useCyclingMessages`, `usePriceDisplay`
 - **Character set presets** — `NUMERIC_CHARS` for fast number transitions, `ALPHA_CHARS` for letters only
@@ -188,13 +193,20 @@ The core display component.
 | `palette` | `Palette` | — | Custom color palette. Overrides `color` when provided. |
 | `flipMs` | `number` | `100` | Duration of each character flip in ms. |
 | `stagger` | `number` | `40` | Cascade delay between each character starting its flip (ms). |
+| `staggerDirection` | `"ltr" \| "rtl" \| "center-out"` | `"ltr"` | Direction of cascade stagger delay. |
 | `gap` | `number` | `4` | Pixel gap between characters. |
 | `mode` | `"cascade" \| "board"` | `"cascade"` | Animation mode. Board mode: all flaps spin at once, settle independently. |
+| `layout` | `"single" \| "board"` | `"single"` | Layout mode. "board" renders multi-row Vestaboard-style with `rows` prop. |
+| `rows` | `string[]` | — | Array of row strings for board layout mode. |
+| `rowCount` | `number` | `rows.length` | Fixed number of rows (board layout). |
+| `easing` | `"linear" \| "decelerate" \| "spring"` | `"linear"` | Flip easing. Decelerate = mechanical inertia. Spring = enhanced bounce. |
+| `perspective` | `number` | `300` | CSS perspective value (px) for 3D depth. |
 | `spinning` | `boolean` | `false` | Continuous cycling with no target. For loading states. |
 | `sound` | `boolean` | `false` | Enable flip sound on each flap landing. |
 | `volume` | `number` | `0.5` | Sound volume, 0 to 1. |
 | `soundVariant` | `"clack" \| "click" \| "soft"` | `"clack"` | Sound type. |
 | `soundSrc` | `string` | — | URL to a custom audio file. Overrides synthesis. |
+| `soundOptions` | `SoundOptions` | — | Fine-tune sound: `{ pitch?: number, decay?: number }`. |
 | `chars` | `string[]` | `CHARS` | Custom character set. Use `NUMERIC_CHARS` for fast number transitions. |
 | `animateOnMount` | `boolean` | `false` | Flip in from blank on mount instead of showing value statically. |
 | `groupGaps` | `number[]` | — | Group sizes for wider gaps. `[2,1,2,1,2]` for `HH:MM:SS`. |

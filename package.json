@@ -1,6 +1,6 @@
 {
   "name": "clackboard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A composable React split-flap display component with realistic 3D flip animation, character cascading, multiple visual styles, and zero dependencies.",
   "author": "Zach Varney <zach@rangerventures.com> (https://zvarney.com)",
   "license": "MIT",

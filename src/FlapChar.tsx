@@ -42,10 +42,13 @@ export function FlapChar({
   color = "dark",
   variant = "modern",
   palette,
+  easing = "linear",
+  perspective: perspectiveProp = 300,
   sound,
   volume,
   soundVariant,
   soundSrc,
+  soundOptions,
   chars,
   onCharComplete,
   extraSpins = 0,
@@ -54,9 +57,7 @@ export function FlapChar({
 }: FlapCharProps) {
   const charSet = chars || CHARS;
   const initial = charSet[0] || " ";
-  // Compute the effective first target for static initialization
   const firstTarget = chars ? (target || charSet[0] || " ") : (target || " ").toUpperCase();
-  // When NOT animateOnMount: start at the target value (no flip). When animateOnMount: start at blank.
   const startChar = animateOnMount ? initial : firstTarget;
 
   const [cur, setCur] = useState(startChar);
@@ -67,21 +68,36 @@ export function FlapChar({
   const queue = useRef<string[]>([]);
   const busy = useRef(false);
   const curRef = useRef(startChar);
-  // When animateOnMount, prevTarget starts null so the first target effect triggers a flip.
-  // Otherwise, start as the target so the effect's equality check skips the first run.
   const prevTarget = useRef<string | null>(animateOnMount ? null : firstTarget);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spinningRef = useRef(spinning);
   spinningRef.current = spinning;
 
+  // Reduced motion detection
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   useEffect(() => {
     injectStyles();
   }, []);
 
+  // Easing-aware CSS class names
+  const useDecel = easing === "decelerate" || easing === "spring";
+  const flipTopClass = useDecel ? "sf-flip-top-decel" : "sf-flip-top";
+  const flipBotClass = useDecel ? "sf-flip-bot-decel" : "sf-flip-bot";
+  const settleClass = easing === "spring" ? "sf-settle-spring" : "sf-settle";
+  const settleDuration = easing === "spring" ? 250 : 150;
+
   const tick = useCallback(() => {
     if (busy.current || !queue.current.length) {
-      // If spinning and queue is empty, refill with a full cycle
       if (spinningRef.current && !queue.current.length) {
         queue.current = fullCycles(curRef.current, 1, chars || CHARS);
         if (!queue.current.length) return;
@@ -94,61 +110,64 @@ export function FlapChar({
     setNxt(ch);
     setFlipKey((k) => k + 1);
 
-    // Total time: top flap folds down (flipMs) + delay before bottom starts (45%) + buffer
     const totalTime = flipMs + flipMs * 0.45 + 30;
     timerRef.current = setTimeout(() => {
       setCur(ch);
       curRef.current = ch;
       setNxt(null);
 
-      // Sound: play on each flip landing (not on mount, only on actual flips)
       if (sound) {
-        playSound(soundVariant || "clack", volume ?? 0.5, soundSrc);
+        playSound(soundVariant || "clack", volume ?? 0.5, soundSrc, soundOptions);
       }
 
-      // Settle bounce
       setSettling(true);
       setSettleKey((k) => k + 1);
-      settleTimerRef.current = setTimeout(() => setSettling(false), 150);
+      settleTimerRef.current = setTimeout(() => setSettling(false), settleDuration);
 
       busy.current = false;
 
-      // Notify completion when queue is empty and not spinning
       if (!queue.current.length && !spinningRef.current && onCharComplete) {
         onCharComplete();
       }
 
-      tick(); // Process next in queue (or refill if spinning)
+      tick();
     }, totalTime);
-  }, [flipMs, sound, volume, soundVariant, soundSrc, onCharComplete, chars]);
+  }, [flipMs, sound, volume, soundVariant, soundSrc, soundOptions, onCharComplete, chars, settleDuration]);
 
   // Target change: build queue with optional extra spins
   useEffect(() => {
-    if (spinning) return; // spinning mode handles its own queue
+    if (spinning) return;
     const t = chars ? (target || charSet[0] || " ") : (target || " ").toUpperCase();
     if (t === prevTarget.current) return;
     prevTarget.current = t;
+
+    // Reduced motion: skip animation, jump directly to target
+    if (reducedMotion) {
+      setCur(t);
+      curRef.current = t;
+      onCharComplete?.();
+      return;
+    }
+
     const steps = stepsTo(curRef.current, t, charSet);
     if (!steps.length && extraSpins <= 0) {
       onCharComplete?.();
       return;
     }
-    // Prepend extra full cycles for board mode
     const prefix = extraSpins > 0 ? fullCycles(curRef.current, extraSpins, charSet) : [];
     queue.current = [...prefix, ...steps];
     const timer = setTimeout(tick, delay);
     return () => clearTimeout(timer);
-  }, [target, delay, tick, charSet, onCharComplete, extraSpins, spinning]);
+  }, [target, delay, tick, charSet, onCharComplete, extraSpins, spinning, reducedMotion]);
 
-  // Spinning mode: start cycling when spinning becomes true, stop when false
+  // Spinning mode
   useEffect(() => {
     if (spinning) {
-      prevTarget.current = null; // allow re-targeting when spinning stops
+      prevTarget.current = null;
       queue.current = fullCycles(curRef.current, 1, charSet);
       const timer = setTimeout(tick, delay);
       return () => clearTimeout(timer);
     }
-    // When spinning stops, the queue drains naturally and tick() won't refill
   }, [spinning, charSet, delay, tick]);
 
   // Cleanup on unmount
@@ -191,6 +210,28 @@ export function FlapChar({
     />
   ) : null;
 
+  // Dynamic lighting overlays for animated flaps
+  const topLighting = (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: "linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(0,0,0,0.12))",
+        pointerEvents: "none",
+      }}
+    />
+  );
+  const botLighting = (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: "linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(255,255,255,0.04))",
+        pointerEvents: "none",
+      }}
+    />
+  );
+
   const isFlipping = nxt !== null;
   const dispCur = cur || " ";
   const dispNxt = nxt || dispCur;
@@ -201,8 +242,9 @@ export function FlapChar({
         width: S.w,
         height: S.h,
         position: "relative",
-        perspective: 300,
+        perspective: perspectiveProp,
         display: "inline-block",
+        isolation: "isolate",
       }}
       aria-hidden="true"
     >
@@ -236,6 +278,7 @@ export function FlapChar({
           borderRadius: `0 0 ${r}px ${r}px`,
           background: P.botBg,
           zIndex: 1,
+          boxShadow: isClassic ? "inset 0 3px 6px -2px rgba(0,0,0,0.5)" : undefined,
         }}
       >
         <span style={{ ...charStyle, position: "relative", top: -half }}>
@@ -248,7 +291,7 @@ export function FlapChar({
       {isFlipping && (
         <div
           key={`t-${flipKey}`}
-          className="sf-flip-top"
+          className={flipTopClass}
           style={{
             position: "absolute",
             top: 0,
@@ -266,6 +309,7 @@ export function FlapChar({
         >
           <span style={charStyle}>{dispCur}</span>
           {texture}
+          {topLighting}
           {/* Back face — visible as flap folds past ~45deg */}
           <div
             style={{
@@ -284,7 +328,7 @@ export function FlapChar({
       {isFlipping && (
         <div
           key={`b-${flipKey}`}
-          className="sf-flip-bot"
+          className={flipBotClass}
           style={{
             position: "absolute",
             bottom: 0,
@@ -305,6 +349,7 @@ export function FlapChar({
             {dispNxt}
           </span>
           {texture}
+          {botLighting}
         </div>
       )}
 
@@ -312,7 +357,7 @@ export function FlapChar({
       {settling && (
         <div
           key={`s-${settleKey}`}
-          className="sf-settle"
+          className={settleClass}
           style={{
             position: "absolute",
             bottom: 0,
@@ -323,7 +368,7 @@ export function FlapChar({
             borderRadius: `0 0 ${r}px ${r}px`,
             background: P.botBg,
             zIndex: 2,
-            animationDuration: "150ms",
+            animationDuration: `${settleDuration}ms`,
           }}
         >
           <span style={{ ...charStyle, position: "relative", top: -half }}>
@@ -333,7 +378,7 @@ export function FlapChar({
         </div>
       )}
 
-      {/* CENTER DIVIDER */}
+      {/* CENTER DIVIDER with inset seam effect */}
       <div
         style={{
           position: "absolute",
@@ -344,8 +389,43 @@ export function FlapChar({
           marginTop: -(S.divider / 2),
           background: P.div,
           zIndex: 10,
+          boxShadow: "0 -1px 2px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.4)",
         }}
       />
+
+      {/* HINGE MARKS — classic variant only */}
+      {isClassic && (
+        <>
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: 3,
+              width: 4,
+              height: 4,
+              marginTop: -2,
+              borderRadius: "50%",
+              background: "#2a2a2e",
+              border: "1px solid #3a3a3e",
+              zIndex: 12,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              right: 3,
+              width: 4,
+              height: 4,
+              marginTop: -2,
+              borderRadius: "50%",
+              background: "#2a2a2e",
+              border: "1px solid #3a3a3e",
+              zIndex: 12,
+            }}
+          />
+        </>
+      )}
 
       {/* BORDER OVERLAY */}
       <div
