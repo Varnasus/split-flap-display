@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { render } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render, act } from "@testing-library/react";
+import { StrictMode } from "react";
 import { FlapChar } from "../FlapChar";
 
 describe("FlapChar", () => {
@@ -47,6 +48,26 @@ describe("FlapChar", () => {
   it("renders with classic variant", () => {
     const { container } = render(<FlapChar target="A" variant="classic" />);
     expect(container.firstChild).toBeTruthy();
+  });
+
+  it("animateOnMount schedules a cascade under React.StrictMode", () => {
+    vi.useFakeTimers();
+    try {
+      const onCharComplete = vi.fn();
+      render(
+        <StrictMode>
+          <FlapChar target="A" animateOnMount delay={50} flipMs={20} onCharComplete={onCharComplete} />
+        </StrictMode>
+      );
+      // Advance well past any cascade: delay + (flipMs + flipMs*0.45 + 30) * steps.
+      // " " -> "A" is a single step; being generous with time.
+      act(() => {
+        vi.advanceTimersByTime(5000);
+      });
+      expect(onCharComplete).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("renders with custom palette", () => {

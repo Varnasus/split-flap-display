@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.2 (2026-04-15)
+
+### Fixed
+- React Strict Mode: `animateOnMount` no longer leaves characters stuck blank. The `FlapChar` mount effect committed its "last target" ref before scheduling the cascade, so Strict Mode's double-invoke cancelled the timer and the second run early-returned. The ref is now committed inside the `setTimeout` callback so a cancelled schedule rolls back naturally.
+
+### Added
+- Small console greeting on first render (brand + version), printed once per page load. SSR- and test-safe.
+
 ## 1.1.0 (2026-04-09)
 
 ### Added

@@ -3,6 +3,7 @@ import type { FlapCharProps } from "./types";
 import { CHARS, PALETTES, SIZES, stepsTo } from "./constants";
 import { injectStyles } from "./styles";
 import { playSound } from "./sound";
+import { printGreeting } from "./greeting";
 
 /** Darken a hex color by a fraction (0-1). Used for flap back-face fallback. */
 function darken(hex: string, amount = 0.15): string {
@@ -87,6 +88,7 @@ export function FlapChar({
 
   useEffect(() => {
     injectStyles();
+    printGreeting();
   }, []);
 
   // Easing-aware CSS class names
@@ -139,10 +141,10 @@ export function FlapChar({
     if (spinning) return;
     const t = chars ? (target || charSet[0] || " ") : (target || " ").toUpperCase();
     if (t === prevTarget.current) return;
-    prevTarget.current = t;
 
     // Reduced motion: skip animation, jump directly to target
     if (reducedMotion) {
+      prevTarget.current = t;
       setCur(t);
       curRef.current = t;
       onCharComplete?.();
@@ -151,12 +153,20 @@ export function FlapChar({
 
     const steps = stepsTo(curRef.current, t, charSet);
     if (!steps.length && extraSpins <= 0) {
+      prevTarget.current = t;
       onCharComplete?.();
       return;
     }
     const prefix = extraSpins > 0 ? fullCycles(curRef.current, extraSpins, charSet) : [];
     queue.current = [...prefix, ...steps];
-    const timer = setTimeout(tick, delay);
+    // Defer committing prevTarget until the cascade actually starts. Under React
+    // Strict Mode the effect runs twice (mount → cleanup → mount); if we commit
+    // the ref in the effect body the second run trips the `t === prevTarget`
+    // guard and never reschedules after the first setTimeout was cleared.
+    const timer = setTimeout(() => {
+      prevTarget.current = t;
+      tick();
+    }, delay);
     return () => clearTimeout(timer);
   }, [target, delay, tick, charSet, onCharComplete, extraSpins, spinning, reducedMotion]);
 
